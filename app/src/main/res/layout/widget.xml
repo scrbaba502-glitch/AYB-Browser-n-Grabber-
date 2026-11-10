@@ -1,0 +1,12 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+    android:padding="12dp" android:gravity="center_vertical" android:background="@drawable/widget_bg">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="A² presents  ·  AYB+"
+        android:textColor="#CCFFFFFF" android:textSize="11sp"/>
+    <TextView android:id="@+id/w_search" android:layout_width="match_parent" android:layout_height="40dp" android:layout_marginTop="6dp"
+        android:background="@drawable/widget_pill" android:gravity="center_vertical" android:paddingStart="16dp"
+        android:text="🔍  Search or type a URL" android:textColor="#FF5B6079" android:textSize="14sp"/>
+    <TextView android:id="@+id/w_paste" android:layout_width="match_parent" android:layout_height="36dp" android:layout_marginTop="6dp"
+        android:background="@drawable/widget_pill_dark" android:gravity="center" android:text="⬇  Paste link and download"
+        android:textColor="#FFFFFFFF" android:textSize="13sp"/>
+</LinearLayout>
