@@ -161,7 +161,8 @@ object Engine {
             } else {
                 val h = if (m == "best") 4320 else m.toInt()
                 r.addOption("-f", "bv*+ba/b"); r.addOption("-S", "res:$h,vcodec:h264,acodec:m4a"); r.addOption("--merge-output-format", "mp4")
-                if (pref(ctx, "subs")) { r.addOption("--write-subs"); r.addOption("--write-auto-subs"); r.addOption("--sub-langs", "en.*"); r.addOption("--embed-subs") }
+                // Keep subtitle requests out of the main media download.
+                // Subtitle rate limits must not abort video/audio extraction.
             }
             d.segs = 100
             YoutubeDL.getInstance().execute(r, d.hashCode().toString()) { p, _, line -> d.segDone = p.toInt(); Regex("at\\s+(\\S+/s)").find(line ?: "")?.let { d.spdText = it.groupValues[1] } }

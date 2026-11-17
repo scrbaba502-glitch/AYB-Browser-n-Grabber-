@@ -144,6 +144,9 @@ class MainActivity : Activity() {
 
         fun open() {
             val t = bar.text.toString().trim()
+            bar.clearFocus()
+            (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                .hideSoftInputFromWindow(bar.windowToken, 0)
             val bang = Regex("^!(\\w+)\\s+(.+)").find(t)
             val be = bang?.let { m -> engines.firstOrNull { it.code == m.groupValues[1].lowercase() } }
             web.loadUrl(if (bang != null && be != null) be.action + "?" + be.param + "=" + Uri.encode(bang.groupValues[2])
@@ -535,7 +538,11 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
                 }
                 return false
             }
-            override fun onPageStarted(v: WebView, u: String, f: android.graphics.Bitmap?) { clearTab(v); if (v === web) { val sp = u.startsWith("https://start.grabpro"); bar.setText(if (sp) "" else u); lock.text = if (sp) "\uD83D\uDD0D" else if (u.startsWith("https")) "\uD83D\uDD12" else "\u24D8" } }
+            override fun onPageStarted(v: WebView, u: String, f: android.graphics.Bitmap?) { clearTab(v); if (v === web) {
+                    (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager)
+                        .hideSoftInputFromWindow(bar.windowToken, 0)
+                    bar.clearFocus()
+                    val sp = u.startsWith("https://start.grabpro"); bar.setText(if (sp) "" else u); lock.text = if (sp) "\uD83D\uDD0D" else if (u.startsWith("https")) "\uD83D\uDD12" else "\u24D8" } }
             override fun onPageFinished(v: WebView, u: String) {
                 if (v === web) badge(found.size)
                 if (adOn) v.evaluateJavascript(COSMETIC, null)
