@@ -153,8 +153,13 @@ class MainActivity : Activity() {
         bar.setOnEditorActionListener { _, _, _ -> open(); true }
 
         grab.setOnClickListener {
-            web.evaluateJavascript(SCRAPE, null)
-            ui.postDelayed({ grabDialog("all") }, 650)
+            val u = web.url
+            if (u != null && videoPage()) {
+                ytDialog(u, web.title ?: "video")
+            } else {
+                web.evaluateJavascript(SCRAPE, null)
+                ui.postDelayed({ grabDialog("all") }, 650)
+            }
         }
         mb.setOnClickListener { menu() }
         st.setOnClickListener { settings() }
