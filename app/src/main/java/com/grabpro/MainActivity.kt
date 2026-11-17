@@ -48,7 +48,7 @@ class MainActivity : Activity() {
     private val YT_ADS = "(function(){if(window.__aybYT)return;window.__aybYT=1;setInterval(function(){var v=document.querySelector('video');var ad=document.querySelector('.ad-showing,.ad-interrupting');if(ad&&v&&isFinite(v.duration)){v.muted=true;v.currentTime=v.duration;v.playbackRate=16}var b=document.querySelector('.ytp-ad-skip-button,.ytp-skip-ad-button,.ytp-ad-skip-button-modern');if(b)b.click();document.querySelectorAll('ytd-ad-slot-renderer,#player-ads,.ytp-ad-overlay-container,ytm-promoted-sparkles-web-renderer,ytm-companion-ad-renderer').forEach(function(e){e.style.display='none'})},400)})()"
     private val READER = "(function(){var old=document.getElementById('ayb-reader');if(old){old.remove();return}var best=document.body,bs=0;document.querySelectorAll('article,main,section,div').forEach(function(e){var t=0;for(var i=0;i<e.children.length;i++){if(e.children[i].tagName=='P')t+=e.children[i].textContent.length}if(t>bs){bs=t;best=e}});var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var o=document.createElement('div');o.id='ayb-reader';o.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483647;overflow:auto;padding:22px 20px 90px;font:19px/1.75 Georgia,serif;background:'+(d?'#0f1220':'#fafaff')+';color:'+(d?'#edeffa':'#14162b');var h=document.createElement('h1');h.textContent=document.title;h.style.cssText='font:700 26px/1.3 sans-serif;margin:0 0 18px';o.appendChild(h);best.querySelectorAll('p,h2,h3,h4,li,blockquote,img').forEach(function(n){var k=n.cloneNode(true);k.removeAttribute('style');k.removeAttribute('class');if(k.tagName=='IMG'){k.style.cssText='max-width:100%;height:auto';k.src=n.currentSrc||n.src}else{k.style.margin='0 0 14px'}o.appendChild(k)});document.body.appendChild(o)})()"
     private val COSMETIC = "(function(){var q='#onetrust-banner-sdk,#onetrust-consent-sdk,#CybotCookiebotDialog,#CybotCookiebotDialogBodyUnderlay,.cc-window,.cc-banner,.fc-consent-root,#cookie-banner,.cookie-banner,#cookieConsent,.cookie-consent,[id*=cookie-consent],[class*=cookie-consent],[class*=cookie-banner],[id*=cookiebanner]';var ads='.adsbygoogle,ins.adsbygoogle,[id^=google_ads],[id*=div-gpt-ad],[class*=ad-slot],[data-ad-slot]';var s=document.createElement('style');s.textContent=q+','+ads+'{display:none!important}';(document.head||document.documentElement).appendChild(s);if(document.querySelector(q)){document.documentElement.style.setProperty('overflow','auto','important');if(document.body)document.body.style.setProperty('overflow','auto','important')}})()"
-    private val SCRAPE = "(function(){var s={};function add(u){if(u&&u.indexOf('http')==0)s[u]=1}function ab(v){try{add(new URL(v,location.href).href)}catch(x){}}var A=['src','data-src','data-full','data-original','data-lazy-src','data-hi-res','poster','href'];document.querySelectorAll('*').forEach(function(e){if(e.currentSrc)add(e.currentSrc);if(!e.getAttribute)return;A.forEach(function(k){var v=e.getAttribute(k);if(v)ab(v)});var ss=e.getAttribute('srcset')||e.getAttribute('data-srcset');if(ss){var best='',bw=-1;ss.split(',').forEach(function(p){var t=p.trim().split(/\\s+/);var w=parseInt(t[1])||0;if(w>bw){bw=w;best=t[0]}});if(best)ab(best)}});document.querySelectorAll('meta').forEach(function(m){var p=m.getAttribute('property')||'';if(p.indexOf('og:image')==0||p.indexOf('og:video')==0||p.indexOf('og:audio')==0)add(m.content)});Object.keys(s).forEach(function(u){GP.add(u)})})()"
+    private val SCRAPE = "(function(){if(window.__aybGrabScan){if(window.__aybGrabScanNow)window.__aybGrabScanNow();return;}window.__aybGrabScan=1;function send(u,h){try{if(!u)return;var v=new URL(u,location.href).href;if(!/^https?:/i.test(v))return;if(h)GP.addMedia(v,h);else GP.add(v)}catch(x){}}function scan(){var A=['src','data-src','data-full','data-original','data-lazy-src','data-hi-res','data-srcset'];document.querySelectorAll('*').forEach(function(e){var tag=(e.tagName||'').toUpperCase();if(tag==='VIDEO')send(e.currentSrc||e.src,'mp4');else if(tag==='AUDIO')send(e.currentSrc||e.src,'m4a');else if(tag==='IMG')send(e.currentSrc||e.src,'jpg');else if(tag==='SOURCE'){var par=(e.parentElement&&e.parentElement.tagName||'').toUpperCase();send(e.src,par==='AUDIO'?'m4a':par==='VIDEO'?'mp4':null)}if(e.poster)send(e.poster,'jpg');A.forEach(function(k){var v=e.getAttribute&&e.getAttribute(k);if(v){if(k==='data-srcset'){var best=v.split(',')[0].trim().split(/\\s+/)[0];send(best,'jpg')}else send(v)}});var ss=e.getAttribute&&(e.getAttribute('srcset')||e.getAttribute('data-srcset'));if(ss){var best='',bw=-1;ss.split(',').forEach(function(q){var t=q.trim().split(/\\s+/);var w=parseInt(t[1])||0;if(w>bw){bw=w;best=t[0]}});if(best)send(best,tag==='IMG'?'jpg':null)}});document.querySelectorAll('meta').forEach(function(m){var k=(m.getAttribute('property')||m.getAttribute('name')||'').toLowerCase();if(k.indexOf('og:image')===0||k==='twitter:image')send(m.content,'jpg');else if(k.indexOf('og:video')===0)send(m.content,'mp4');else if(k.indexOf('og:audio')===0)send(m.content,'m4a')});try{performance.getEntriesByType('resource').forEach(function(r){send(r.name)})}catch(x){}}window.__aybGrabScanNow=scan;var queued=false;function later(){if(queued)return;queued=true;setTimeout(function(){queued=false;scan()},700)}scan();try{new MutationObserver(later).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','srcset','poster','data-src','data-original','data-lazy-src']})}catch(x){}document.addEventListener('loadedmetadata',function(e){var t=e.target;if(t&&t.tagName==='VIDEO')send(t.currentSrc||t.src,'mp4');else if(t&&t.tagName==='AUDIO')send(t.currentSrc||t.src,'m4a')},true);document.addEventListener('play',function(e){var t=e.target;if(t&&t.tagName==='VIDEO')send(t.currentSrc||t.src,'mp4');else if(t&&t.tagName==='AUDIO')send(t.currentSrc||t.src,'m4a')},true)})()
     private var lastClip = ""
     private val prefKeys = listOf("subs", "sb", "meta", "wifi", "desktop", "adblock", "dark", "ocr", "lock", "amoled", "clean")
     private val prefDefs = booleanArrayOf(false, false, true, false, false, true, true, true, false, false, true)
@@ -152,7 +152,10 @@ class MainActivity : Activity() {
         go.setOnClickListener { open() }
         bar.setOnEditorActionListener { _, _, _ -> open(); true }
 
-        grab.setOnClickListener { web.evaluateJavascript(SCRAPE, null); ui.postDelayed({ if (videoPage()) ytDialog(web.url ?: "", web.title ?: "Video") else grabDialog("all") }, 450) }
+        grab.setOnClickListener {
+            web.evaluateJavascript(SCRAPE, null)
+            ui.postDelayed({ grabDialog("all") }, 650)
+        }
         mb.setOnClickListener { menu() }
         st.setOnClickListener { settings() }
         yt.setOnClickListener { web.url?.let { ytDialog(it, web.title ?: "video") } }
@@ -239,7 +242,18 @@ class MainActivity : Activity() {
     private fun grabDialog(filter: String) {
         val all = found.values.toList().filter { filter == "all" || cats[filter]?.contains(extOf(it)) == true }
             .let { l -> if (filter == "Images") l.sortedBy { nat(it.name) } else l.reversed() }
-        if (all.isEmpty()) { Toast.makeText(this, "Nothing found. Scroll or play the page, then tap Grab again.", Toast.LENGTH_LONG).show(); return }
+        if (all.isEmpty()) {
+            AlertDialog.Builder(this)
+                .setTitle("No downloadable media yet")
+                .setMessage("AYB+ is watching this page for media. Try playing the video, scrolling to load more content, or scan again.")
+                .setPositiveButton("Scan again") { _, _ ->
+                    web.evaluateJavascript(SCRAPE, null)
+                    ui.postDelayed({ grabDialog(filter) }, 900)
+                }
+                .setNegativeButton("Close", null)
+                .show()
+            return
+        }
         val checked = BooleanArray(all.size)
         AlertDialog.Builder(this).setTitle((if (filter == "all") "Found" else filter) + " (${all.size})")
             .setMultiChoiceItems(all.map { "[" + extOf(it).uppercase() + "] " + it.name }.toTypedArray(), checked) { _, i, c -> checked[i] = c }
@@ -339,7 +353,11 @@ class MainActivity : Activity() {
     }
     private val videoHosts = listOf("youtube.com", "youtu.be", "instagram.com", "facebook.com", "fb.watch", "x.com", "twitter.com", "tiktok.com", "vimeo.com", "dailymotion.com", "reddit.com", "twitch.tv", "bilibili.com", "soundcloud.com")
     private fun videoPage(): Boolean { val h = try { Uri.parse(web.url ?: "").host ?: "" } catch (e: Exception) { "" }; return videoHosts.any { h == it || h.endsWith(".$it") } }
-    private fun badge(n: Int) { grab.text = if (n > 0) "\u2B07 $n" else "\u2B07"; grab.visibility = if (n > 0 || videoPage()) View.VISIBLE else View.GONE }
+    private fun badge(n: Int) {
+        grab.text = if (n > 0) "\u2B07 $n" else "\u2B07"
+        val homePage = web.url?.startsWith("https://start.grabpro") == true
+        grab.visibility = if (list.visibility == View.VISIBLE || homePage) View.GONE else View.VISIBLE
+    }
     private class Eng(val name: String, val action: String, val param: String, val code: String)
     private val engines = listOf(
         Eng("Google", "https://www.google.com/search", "q", "g"), Eng("Bing", "https://www.bing.com/search", "q", "b"),
@@ -486,13 +504,21 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
         w.settings.javaScriptCanOpenWindowsAutomatically = false
         w.settings.apply { javaScriptEnabled = true; domStorageEnabled = true; mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW }
         CookieManager.getInstance().setAcceptThirdPartyCookies(w, true)
-        w.addJavascriptInterface(object { @JavascriptInterface fun add(u: String) { runOnUiThread { sniff(w, u) } } }, "GP")
+        w.addJavascriptInterface(object {
+            @JavascriptInterface fun add(u: String) { runOnUiThread { sniff(w, u) } }
+            @JavascriptInterface fun addMedia(u: String, hint: String) { runOnUiThread { sniff(w, u, hint) } }
+        }, "GP")
         w.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(v: WebView, r: WebResourceRequest): WebResourceResponse? {
                 val u = r.url.toString()
                 if (adOn && !r.isForMainFrame && (AdBlock.blocked(r.url.host) || adHosts.any { r.url.host?.contains(it) == true })) { blockedN.incrementAndGet(); return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream(ByteArray(0))) }
                 val acc = r.requestHeaders["Accept"] ?: ""
-                val hint = if (acc.startsWith("image/")) "jpg" else null
+                val hint = when {
+                    acc.contains("image/") -> "jpg"
+                    acc.contains("video/") -> "mp4"
+                    acc.contains("audio/") -> "m4a"
+                    else -> null
+                }
                 runOnUiThread { sniff(v, u, hint) }
                 return null
             }
