@@ -60,7 +60,6 @@ class MainActivity : Activity() {
         "Images" to setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "avif", "heic", "tiff"),
         "Documents" to setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "epub", "txt", "rtf", "odt", "ods", "odp", "csv"),
         "Archives/Apps" to setOf("zip", "rar", "7z", "gz", "tar", "iso", "apk", "exe", "dmg"))
-    private val exts = cats.values.flatten().toSet()
     private val adHosts = listOf("doubleclick.net", "googlesyndication.com", "adservice.google", "popads.net", "propellerads", "adsterra", "exoclick", "taboola.com", "outbrain.com")
 
     private fun mk(u: String, name: String, w: WebView = web) = Item(u, name, w.url ?: "", w.settings.userAgentString, CookieManager.getInstance().getCookie(u) ?: "")
@@ -68,9 +67,9 @@ class MainActivity : Activity() {
     // sniffs by extension, by "Accept: image/*" on extensionless images, and keeps only the largest size of each image variant
     private fun sniff(w: WebView, u: String, hint: String? = null) {
         if (!u.startsWith("http")) return
+        val match = MediaDetector.classify(u, hint) ?: return
         val path = u.substringBefore('?').substringBefore('#')
-        var ext = path.substringAfterLast('.', "").lowercase().let { if (it.length > 5 || '/' in it) "" else it }
-        if (ext !in exts) { if (hint == null) return; ext = hint }
+        val ext = match.extension
         val f = foundMap.getOrPut(w) { LinkedHashMap() }
         if (f.containsKey(u)) return
         val vr = varMap.getOrPut(w) { HashMap() }
@@ -83,7 +82,7 @@ class MainActivity : Activity() {
         }
         var name = Uri.decode(path.substringAfterLast('/')).ifEmpty { "file.$ext" }
         if (!name.contains('.')) name += ".$ext"
-        if (ext == "m3u8" || ext == "mpd") {
+        if (match.isManifest) {
             val t = (w.title ?: "").replace(Regex("[\\\\/:*?\"<>|]"), " ").trim().take(80).ifEmpty { name.substringBeforeLast('.') }
             f[u] = Item(u, "$t.mp4", w.url ?: "", w.settings.userAgentString, CookieManager.getInstance().getCookie(u) ?: "", "best")
         } else f[u] = mk(u, name, w)
