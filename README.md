@@ -3,7 +3,7 @@
 A modern Android browser with an integrated media grabber.
 
 ## Identity
-The 3.2.0 release introduces the custom roaring-lion emblem in metallic silver, graphite and restrained violet. The launcher uses an adaptive icon with a safe-area composition so the lion and upper-right plus remain visible across Android launcher masks.
+The 3.2.1 release introduces the custom roaring-lion emblem in metallic silver, graphite and restrained violet. The launcher uses an adaptive icon with a safe-area composition so the lion and upper-right plus remain visible across Android launcher masks.
 
 ## Features
 - WebView-based browser with multi-tab browsing
@@ -17,7 +17,7 @@ The 3.2.0 release introduces the custom roaring-lion emblem in metallic silver, 
 - Download management and expanded media detection
 
 ## Download and build
-Every push and manual workflow dispatch runs the Android debug build. Download the `AYB-Plus-Supreme-3.2.0-debug-apk` artifact from GitHub Actions.
+Every push and manual workflow dispatch runs the Android debug build. Download the `AYB-Plus-Supreme-3.2.1-debug-apk` artifact from GitHub Actions.
 
 ## Requirements
 - JDK 17
