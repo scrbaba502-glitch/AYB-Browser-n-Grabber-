@@ -121,7 +121,7 @@ class MainActivity : Activity() {
         frame = FrameLayout(this); frame.addView(web); frame.addView(list)
         grab = Button(this).apply {
             text = "\u2B07 0"; isAllCaps = false; textSize = 15f; setTextColor(0xFFFFFFFF.toInt()); setPadding(0, 0, 0, 0)
-            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(accLight[getSharedPreferences("gp", 0).getInt("accent", 0)].toInt(), 0xFF00B0FF.toInt())).apply { shape = GradientDrawable.OVAL }
+            background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(accLight[accentIndex()].toInt(), 0xFF00B0FF.toInt())).apply { shape = GradientDrawable.OVAL }
             elevation = dp(8).toFloat(); visibility = View.GONE
         }
         frame.addView(grab, FrameLayout.LayoutParams(dp(64), dp(64), Gravity.BOTTOM or Gravity.END).apply { setMargins(0, 0, dp(16), dp(16)) })
@@ -409,10 +409,12 @@ class MainActivity : Activity() {
         } })
     }
 
+    private fun accentIndex(): Int = getSharedPreferences("gp", 0).getInt("accent", 0).coerceIn(0, accLight.lastIndex)
+
     private fun initColors() {
         val night = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
         bgC = if (night) 0xFF0F1220.toInt() else 0xFFFAFAFF.toInt(); pillC = if (night) 0xFF1B2036.toInt() else 0xFFEEF0FB.toInt()
-        inkC = if (night) 0xFFEDEFFA.toInt() else 0xFF14162B.toInt(); accC = (if (night) accDark else accLight)[getSharedPreferences("gp", 0).getInt("accent", 0)].toInt()
+        inkC = if (night) 0xFFEDEFFA.toInt() else 0xFF14162B.toInt(); accC = (if (night) accDark else accLight)[accentIndex()].toInt()
         if (night && getSharedPreferences("gp", 0).getBoolean("amoled", false)) { bgC = 0xFF000000.toInt(); pillC = 0xFF141414.toInt() }
         window.statusBarColor = bgC; window.navigationBarColor = bgC
         window.decorView.systemUiVisibility = if (night) 0 else (View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
@@ -471,7 +473,7 @@ class MainActivity : Activity() {
         return try {
             val saved = JSONArray(raw)
             if (saved.length() == 0) return false
-            val urls = (0 until saved.length()).mapNotNull { saved.optString(it).takeIf { u -> u == "@home" || u.startsWith("http://") || u.startsWith("https://") || u == "about:blank" } }.take(20)
+            val urls = (0 until saved.length()).mapNotNull { saved.optString(it).takeIf { u -> u == "@home" || u.startsWith("http://") || u.startsWith("https://") || u == "about:blank" } }.take(4) // Restore a small working set; creating 20 WebViews at once can exhaust app memory.
             if (urls.isEmpty()) return false
             if (urls[0] == "@home") loadHome(web) else web.loadUrl(urls[0])
             for (i in 1 until urls.size) newTab(if (urls[i] == "@home") null else urls[i])
