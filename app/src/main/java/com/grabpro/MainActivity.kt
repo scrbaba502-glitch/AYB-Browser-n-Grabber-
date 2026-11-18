@@ -326,6 +326,7 @@ class MainActivity : Activity() {
         }.start()
     }
 
+    // BRANDING RULE: "A² presents" is permitted ONLY inside this launch intro. Never show it elsewhere in the app UI.
     // "A² presents AYB+ : Browser + Grabber" launch intro (tap to skip)
     private fun showIntro() {
         val splash = LinearLayout(this).apply {
@@ -473,14 +474,13 @@ class MainActivity : Activity() {
         val html = """<!doctype html><html><head><meta name=viewport content='width=device-width,initial-scale=1'><meta name=color-scheme content='light dark'><style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:sans-serif;text-align:center;color:#14162b;background:radial-gradient(900px 500px at 50% -10%,#e4dcff,transparent),#fafaff}
 @media(prefers-color-scheme:dark){body{color:#edeffa;background:radial-gradient(900px 500px at 50% -10%,#3a2a7a,transparent),#0f1220}.s{background:#1b2036!important;border-color:#2a3052!important;color:#edeffa}.t i{background:#1b2036!important}}
-svg{margin-top:7vh;filter:drop-shadow(0 8px 20px #7c4dff66)}.a{margin-top:14px;font-size:12px;letter-spacing:3px;text-transform:uppercase;opacity:.65}
-h1{margin:6px 0 2px;font-size:56px;font-weight:800;letter-spacing:-2px;background:linear-gradient(90deg,#7c4dff,#00b0ff);-webkit-background-clip:text;color:transparent}
+svg{margin-top:7vh;filter:drop-shadow(0 8px 20px #7c4dff66)}h1{margin:6px 0 2px;font-size:56px;font-weight:800;letter-spacing:-2px;background:linear-gradient(90deg,#7c4dff,#00b0ff);-webkit-background-clip:text;color:transparent}
 .sub{opacity:.7;font-size:14px;margin-bottom:26px}
 .s{width:86%;max-width:560px;padding:15px 22px;border-radius:30px;border:1px solid #e0dcf5;font-size:16px;background:#fff;box-shadow:0 8px 30px #7c4dff22}
 .g{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 6px;max-width:520px;margin:34px auto;padding:0 12px}
 a{text-decoration:none;color:inherit;font-size:11.5px}
 .t i{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 7px;border-radius:18px;background:#fff;box-shadow:0 4px 14px #7c4dff22;font:700 22px sans-serif;font-style:normal;color:#7c4dff}
-</style></head><body><svg width=76 height=76 viewBox='0 0 108 108'><defs><linearGradient id=g x1=0 y1=0 x2=1 y2=1><stop offset=0 stop-color='#5b2ee6'/><stop offset=.5 stop-color='#7c4dff'/><stop offset=1 stop-color='#00b0ff'/></linearGradient></defs><rect width=108 height=108 rx=26 fill='url(#g)'/><g fill=none stroke=#fff stroke-width=7 stroke-linecap=round stroke-linejoin=round><path d='M35,84 L54,30 L73,84'/><path d='M54,48 L54,66 M49.5,61.5 L54,66 L58.5,61.5' stroke-width=4.5 /><path d='M77,27 L77,39 M71,33 L83,33' stroke=#b3ecff stroke-width=4 /></g></svg><div class=a>A&sup2; presents</div><h1>AYB+</h1><div class=sub>Browser + Grabber</div><form action='$act'><input class=s name=${eng().param} placeholder='Search ${eng().name} or type a URL' autocomplete=off></form><div class=g>$tiles</div></body></html>"""
+</style></head><body><svg width=76 height=76 viewBox='0 0 108 108'><defs><linearGradient id=g x1=0 y1=0 x2=1 y2=1><stop offset=0 stop-color='#5b2ee6'/><stop offset=.5 stop-color='#7c4dff'/><stop offset=1 stop-color='#00b0ff'/></linearGradient></defs><rect width=108 height=108 rx=26 fill='url(#g)'/><g fill=none stroke=#fff stroke-width=7 stroke-linecap=round stroke-linejoin=round><path d='M35,84 L54,30 L73,84'/><path d='M54,48 L54,66 M49.5,61.5 L54,66 L58.5,61.5' stroke-width=4.5 /><path d='M77,27 L77,39 M71,33 L83,33' stroke=#b3ecff stroke-width=4 /></g></svg><h1>AYB+</h1><div class=sub>Browser + Grabber</div><form action='$act'><input class=s name=${eng().param} placeholder='Search ${eng().name} or type a URL' autocomplete=off></form><div class=g>$tiles</div></body></html>"""
         w.loadDataWithBaseURL("https://start.grabpro/", html, "text/html", "utf-8", null)
     }
 
@@ -613,7 +613,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
             "\u267B  Restore from backup" to { restore() },
             "\uD83C\uDFE0  Home" to { loadHome(web) },
             "\u2716  Close this tab" to { closeTab() })
-        sheet("AYB+  \u00B7  A\u00B2 presents", rows)
+        sheet("AYB+", rows)
     }
 
     // IDM-style site grabber: reads this page and up to 40 same-site pages it links to, and collects every downloadable file
