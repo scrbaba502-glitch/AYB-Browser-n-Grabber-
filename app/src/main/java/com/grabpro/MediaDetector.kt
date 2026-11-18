@@ -39,6 +39,19 @@ object MediaDetector {
         "image/png" to "png",
         "image/webp" to "webp",
         "image/gif" to "gif",
+        "image/avif" to "avif",
+        "image/heic" to "heic",
+        "image/tiff" to "tiff",
+        "audio/x-wav" to "wav",
+        "audio/wav" to "wav",
+        "audio/x-flac" to "flac",
+        "audio/x-aac" to "aac",
+        "video/quicktime" to "mov",
+        "video/x-matroska" to "mkv",
+        "video/x-msvideo" to "avi",
+        "application/zip" to "zip",
+        "application/x-7z-compressed" to "7z",
+        "application/x-rar-compressed" to "rar",
         "application/pdf" to "pdf"
     )
 
