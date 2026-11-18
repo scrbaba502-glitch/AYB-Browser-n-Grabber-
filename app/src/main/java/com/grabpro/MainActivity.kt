@@ -252,7 +252,7 @@ class MainActivity : Activity() {
     private fun extOf(d: Item) = d.name.substringAfterLast('.').lowercase()
 
     private fun queueAll(l: List<Item>) {
-        l.forEach { d -> if (downloads.none { it.url == d.url }) { downloads.add(d); Engine.start(this, d) } }
+        l.forEach { enqueueMedia(it, reveal = false, notifyDuplicate = false) }
         showList(true)
     }
 
@@ -445,7 +445,12 @@ class MainActivity : Activity() {
             var savedIndex = 0
             tabs.forEach { tab ->
                 if (!priv.contains(tab)) {
-                    val url = tab.url?.takeIf { it.startsWith("http://") || it.startsWith("https://") || it.startsWith("about:blank") }
+                    val currentUrl = tab.url.orEmpty()
+                    val url = when {
+                        currentUrl.startsWith("https://start.grabpro") -> "@home"
+                        currentUrl.startsWith("http://") || currentUrl.startsWith("https://") || currentUrl.startsWith("about:blank") -> currentUrl
+                        else -> null
+                    }
                     if (url != null) {
                         urls.put(url)
                         if (tab === web) selected = savedIndex
@@ -466,10 +471,10 @@ class MainActivity : Activity() {
         return try {
             val saved = JSONArray(raw)
             if (saved.length() == 0) return false
-            val urls = (0 until saved.length()).mapNotNull { saved.optString(it).takeIf { u -> u.startsWith("http://") || u.startsWith("https://") || u == "about:blank" } }.take(20)
+            val urls = (0 until saved.length()).mapNotNull { saved.optString(it).takeIf { u -> u == "@home" || u.startsWith("http://") || u.startsWith("https://") || u == "about:blank" } }.take(20)
             if (urls.isEmpty()) return false
-            web.loadUrl(urls[0])
-            for (i in 1 until urls.size) newTab(urls[i])
+            if (urls[0] == "@home") loadHome(web) else web.loadUrl(urls[0])
+            for (i in 1 until urls.size) newTab(if (urls[i] == "@home") null else urls[i])
             select(prefs.getInt("tab_session_selected", 0).coerceIn(0, urls.size - 1))
             true
         } catch (_: Exception) { false }
@@ -587,7 +592,7 @@ class MainActivity : Activity() {
     }
 
     private fun closeTab() {
-        if (tabs.size > 1) { val k = tabs.indexOf(web); frame.removeView(web); foundMap.remove(web); varMap.remove(web); priv.remove(web); web.destroy(); tabs.removeAt(k); if (priv.isEmpty()) try { androidx.webkit.ProfileStore.getInstance().deleteProfile("private") } catch (_: Exception) {}; select(minOf(k, tabs.size - 1)) }
+        if (tabs.size > 1) { val k = tabs.indexOf(web); frame.removeView(web); foundMap.remove(web); varMap.remove(web); priv.remove(web); tabIcons.remove(web); tabThumbs.remove(web)?.recycle(); web.stopLoading(); web.destroy(); tabs.removeAt(k); if (priv.isEmpty()) try { androidx.webkit.ProfileStore.getInstance().deleteProfile("private") } catch (_: Exception) {}; select(minOf(k, tabs.size - 1)) }
     }
 
     private fun loadHome(w: WebView) {
@@ -629,7 +634,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
                         0 -> {
                             var n = Uri.decode(u.substringBefore('?').substringAfterLast('/')).ifEmpty { "file" }
                             if (!n.contains('.')) n += if (img) ".jpg" else ".bin"
-                            val d = mk(u, n, w); downloads.add(d); Engine.start(this, d); showList(true)
+                            val d = mk(u, n, w); enqueueMedia(d)
                         }
                         1 -> newTab(u)
                         2 -> (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(android.content.ClipData.newPlainText("link", u))
@@ -683,8 +688,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
             }
         }
         w.setDownloadListener { u, _, cd, mime, _ ->
-            val d = mk(u, URLUtil.guessFileName(u, cd, mime)); downloads.add(d); Engine.start(this, d)
-            Toast.makeText(this, "Downloading ${d.name}", Toast.LENGTH_SHORT).show()
+            val d = mk(u, URLUtil.guessFileName(u, cd, mime)); enqueueMedia(d)
         }
 
     }
@@ -740,7 +744,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
             "\uD83D\uDD17  Unshorten a link" to { unshortenDialog(lastClip) },
             "\u26A1  Speed test" to { speedTest() },
             "\uD83D\uDDC2  My files (file manager)" to { auth { filesScreen() } },
-            "\\u2139  About AYB+ SUPREME" to { aboutDialog() },
+            "\u2139  About AYB+ SUPREME" to { aboutDialog() },
             "\uD83C\uDFA8  Accent colour" to { accentSheet() },
             "\uD83D\uDCBE  Backup settings, bookmarks, history" to { backup() },
             "\u267B  Restore from backup" to { restore() },
@@ -751,7 +755,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
 
     private fun aboutDialog() {
         val body = TextView(this).apply {
-            text = "A² presents\nAYB+ SUPREME\n\nA browser built for control, privacy and powerful media discovery. Browse, organize tabs, detect accessible media and manage downloads in one place.\\n\\nNo DRM bypass. No pretending encrypted or restricted media is downloadable."
+            text = "A² presents\nAYB+ SUPREME\n\nA browser built for control, privacy and powerful media discovery. Browse, organize tabs, detect accessible media and manage downloads in one place.\n\nNo DRM bypass. No pretending encrypted or restricted media is downloadable."
             textSize = 15f; setTextColor(inkC); setLineSpacing(dp(5).toFloat(), 1f); setPadding(dp(8), dp(8), dp(8), dp(8))
         }
         AlertDialog.Builder(this).setTitle("About AYB+ SUPREME").setView(body).setPositiveButton("Close", null).show()
@@ -1181,18 +1185,18 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
     }
 
     // Avoid duplicate active jobs while allowing different qualities and later retries.
-    private fun enqueueMedia(d: Item) {
+    private fun enqueueMedia(d: Item, reveal: Boolean = true, notifyDuplicate: Boolean = true) {
         val existing = downloads.firstOrNull {
             it.url == d.url && it.ytmode == d.ytmode &&
             it.status in setOf("Queued", "Downloading", "Scheduled")
         }
         if (existing != null) {
-            Toast.makeText(this, "Already queued or downloading", Toast.LENGTH_SHORT).show()
+            if (notifyDuplicate) Toast.makeText(this, "Already queued or downloading", Toast.LENGTH_SHORT).show()
             return
         }
         downloads.add(d)
         Engine.start(this, d)
-        showList(true)
+        if (reveal) showList(true)
     }
 
     // the built-in video/audio downloader (YouTube and 1000+ sites) - no separate tool, it lives behind the floating button
