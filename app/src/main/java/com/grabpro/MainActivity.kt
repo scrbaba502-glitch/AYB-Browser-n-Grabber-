@@ -11,6 +11,8 @@ import android.text.InputType
 import android.text.format.Formatter
 import android.content.res.ColorStateList
 import android.graphics.Typeface
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.drawable.GradientDrawable
 import android.text.TextUtils
 import android.view.Gravity
@@ -44,6 +46,8 @@ class MainActivity : Activity() {
     private var tick = 0
     private lateinit var frame: FrameLayout
     private val tabs = ArrayList<WebView>()
+    private val tabIcons = HashMap<WebView, Bitmap>()
+    private val tabThumbs = HashMap<WebView, Bitmap>()
     private val blockedN = java.util.concurrent.atomic.AtomicInteger()
     private val YT_ADS = "(function(){if(window.__aybYT)return;window.__aybYT=1;setInterval(function(){var v=document.querySelector('video');var ad=document.querySelector('.ad-showing,.ad-interrupting');if(ad&&v&&isFinite(v.duration)){v.muted=true;v.currentTime=v.duration;v.playbackRate=16}var b=document.querySelector('.ytp-ad-skip-button,.ytp-skip-ad-button,.ytp-ad-skip-button-modern');if(b)b.click();document.querySelectorAll('ytd-ad-slot-renderer,#player-ads,.ytp-ad-overlay-container,ytm-promoted-sparkles-web-renderer,ytm-companion-ad-renderer').forEach(function(e){e.style.display='none'})},400)})()"
     private val READER = "(function(){var old=document.getElementById('ayb-reader');if(old){old.remove();return}var best=document.body,bs=0;document.querySelectorAll('article,main,section,div').forEach(function(e){var t=0;for(var i=0;i<e.children.length;i++){if(e.children[i].tagName=='P')t+=e.children[i].textContent.length}if(t>bs){bs=t;best=e}});var d=window.matchMedia('(prefers-color-scheme: dark)').matches;var o=document.createElement('div');o.id='ayb-reader';o.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483647;overflow:auto;padding:22px 20px 90px;font:19px/1.75 Georgia,serif;background:'+(d?'#0f1220':'#fafaff')+';color:'+(d?'#edeffa':'#14162b');var h=document.createElement('h1');h.textContent=document.title;h.style.cssText='font:700 26px/1.3 sans-serif;margin:0 0 18px';o.appendChild(h);best.querySelectorAll('p,h2,h3,h4,li,blockquote,img').forEach(function(n){var k=n.cloneNode(true);k.removeAttribute('style');k.removeAttribute('class');if(k.tagName=='IMG'){k.style.cssText='max-width:100%;height:auto';k.src=n.currentSrc||n.src}else{k.style.margin='0 0 14px'}o.appendChild(k)});document.body.appendChild(o)})()"
@@ -235,7 +239,12 @@ class MainActivity : Activity() {
         }
         ui.post(object : Runnable { override fun run() { (list.adapter as BaseAdapter).notifyDataSetChanged(); if (++tick % 6 == 0) Engine.save(this@MainActivity); ui.postDelayed(this, 500) } })
         adOn = getSharedPreferences("gp", 0).getBoolean("adblock", true); applyDesktop(false)
-        intent?.data?.toString()?.let { web.loadUrl(it) } ?: loadHome(web)
+        val externalUrl = intent?.data?.toString()
+        when {
+            externalUrl != null -> web.loadUrl(externalUrl)
+            intent?.action == Intent.ACTION_SEND -> loadHome(web)
+            !restoreTabSession() -> loadHome(web)
+        }
         if (intent?.action == Intent.ACTION_SEND) intent.getStringExtra(Intent.EXTRA_TEXT)?.let { t -> Regex("https?://\\S+").find(t)?.value?.let { ytDialog(it, "video") } }
     }
 
@@ -412,8 +421,63 @@ class MainActivity : Activity() {
     private val groupOf = HashMap<WebView, Int>()
     private val dots = listOf("\u26AA", "\uD83D\uDD34", "\uD83D\uDFE0", "\uD83D\uDFE2", "\uD83D\uDD35", "\uD83D\uDFE3")
 
-    // Chrome-style mobile tab overview: two-column cards, one-tap switching, per-card close.
+    // Capture a lightweight preview for the tab switcher without persisting page pixels.
+    private fun captureTabPreview(tab: WebView) {
+        if (tab.width < 2 || tab.height < 2) return
+        try {
+            val w = 320; val h = 190
+            val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
+            val canvas = Canvas(bmp)
+            canvas.drawColor(0xFF171A2B.toInt())
+            val scale = minOf(w.toFloat() / tab.width, h.toFloat() / tab.height)
+            canvas.save()
+            canvas.scale(scale, scale)
+            tab.draw(canvas)
+            canvas.restore()
+            tabThumbs.put(tab, bmp)?.takeIf { it !== bmp }?.recycle()
+        } catch (_: Exception) {}
+    }
+
+    private fun saveTabSession() {
+        try {
+            val urls = JSONArray()
+            var selected = 0
+            var savedIndex = 0
+            tabs.forEach { tab ->
+                if (!priv.contains(tab)) {
+                    val url = tab.url?.takeIf { it.startsWith("http://") || it.startsWith("https://") || it.startsWith("about:blank") }
+                    if (url != null) {
+                        urls.put(url)
+                        if (tab === web) selected = savedIndex
+                        savedIndex++
+                    }
+                }
+            }
+            getSharedPreferences("gp", 0).edit()
+                .putString("tab_session", urls.toString())
+                .putInt("tab_session_selected", selected.coerceAtMost((urls.length() - 1).coerceAtLeast(0)))
+                .apply()
+        } catch (_: Exception) {}
+    }
+
+    private fun restoreTabSession(): Boolean {
+        val prefs = getSharedPreferences("gp", 0)
+        val raw = prefs.getString("tab_session", "[]") ?: "[]"
+        return try {
+            val saved = JSONArray(raw)
+            if (saved.length() == 0) return false
+            val urls = (0 until saved.length()).mapNotNull { saved.optString(it).takeIf { u -> u.startsWith("http://") || u.startsWith("https://") || u == "about:blank" } }.take(20)
+            if (urls.isEmpty()) return false
+            web.loadUrl(urls[0])
+            for (i in 1 until urls.size) newTab(urls[i])
+            select(prefs.getInt("tab_session_selected", 0).coerceIn(0, urls.size - 1))
+            true
+        } catch (_: Exception) { false }
+    }
+
+    // Chrome-style mobile tab overview: live page previews, favicons, one-tap switching and per-card close.
     private fun tabsDialog() {
+        tabs.forEach { captureTabPreview(it) }
         val dlg = android.app.Dialog(this, android.R.style.Theme_DeviceDefault_NoActionBar)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(16)); setBackgroundColor(bgC) }
         val header = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
@@ -432,14 +496,19 @@ class MainActivity : Activity() {
                     isClickable = true; isFocusable = true; setOnClickListener { dlg.dismiss(); select(index) }
                 }
                 val topLine = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-                topLine.addView(TextView(this).apply { text = if (priv.contains(tab)) "◉" else dots[groupOf[tab] ?: 0]; textSize = 16f; setTextColor(accC) })
+                val icon = tabIcons[tab]
+                if (icon != null && !icon.isRecycled) {
+                    topLine.addView(ImageView(this).apply { setImageBitmap(icon); scaleType = ImageView.ScaleType.FIT_CENTER }, LinearLayout.LayoutParams(dp(24), dp(24)))
+                } else {
+                    topLine.addView(TextView(this).apply { text = if (priv.contains(tab)) "◉" else dots[groupOf[tab] ?: 0]; textSize = 16f; setTextColor(accC) })
+                }
                 topLine.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
                 topLine.addView(TextView(this).apply {
                     text = "×"; textSize = 22f; setTextColor(inkC); gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(2), 0)
                     setOnClickListener {
                         if (tabs.size > 1) {
                             val wasCurrent = tab === web; val at = tabs.indexOf(tab)
-                            frame.removeView(tab); foundMap.remove(tab); varMap.remove(tab); priv.remove(tab); groupOf.remove(tab)
+                            frame.removeView(tab); foundMap.remove(tab); varMap.remove(tab); priv.remove(tab); groupOf.remove(tab); tabIcons.remove(tab); tabThumbs.remove(tab)?.recycle()
                             tab.stopLoading(); tab.destroy(); tabs.remove(tab)
                             if (priv.isEmpty()) try { androidx.webkit.ProfileStore.getInstance().deleteProfile("private") } catch (_: Exception) {}
                             if (wasCurrent) select(minOf(at, tabs.size - 1))
@@ -448,6 +517,18 @@ class MainActivity : Activity() {
                     }
                 })
                 card.addView(topLine)
+                val preview = tabThumbs[tab]
+                if (preview != null && !preview.isRecycled) {
+                    card.addView(ImageView(this).apply {
+                        setImageBitmap(preview); scaleType = ImageView.ScaleType.CENTER_CROP
+                        background = rr(0xFF10121D.toInt(), 9)
+                    }, LinearLayout.LayoutParams(-1, dp(82)).apply { topMargin = dp(6) })
+                } else {
+                    card.addView(TextView(this).apply {
+                        text = "PREVIEW"; gravity = Gravity.CENTER; textSize = 10f; letterSpacing = 0.16f
+                        setTextColor(0xFF777D94.toInt()); background = rr(0xFF10121D.toInt(), 9)
+                    }, LinearLayout.LayoutParams(-1, dp(82)).apply { topMargin = dp(6) })
+                }
                 card.addView(TextView(this).apply {
                     text = tab.title?.takeIf { it.isNotBlank() } ?: "New tab"; textSize = 15f
                     setTypeface(null, Typeface.BOLD); setTextColor(inkC); maxLines = 2; ellipsize = TextUtils.TruncateAt.END
@@ -457,7 +538,7 @@ class MainActivity : Activity() {
                     text = try { Uri.parse(tab.url ?: "").host ?: "New tab" } catch (_: Exception) { "New tab" }
                     textSize = 11f; setTextColor(0xFF9298AC.toInt()); maxLines = 1; ellipsize = TextUtils.TruncateAt.MIDDLE
                 })
-                grid.addView(card, android.widget.GridLayout.LayoutParams().apply { width = cardW; height = dp(126); setMargins(dp(4), dp(5), dp(4), dp(5)) })
+                grid.addView(card, android.widget.GridLayout.LayoutParams().apply { width = cardW; height = dp(218); setMargins(dp(4), dp(5), dp(4), dp(5)) })
             }
         }
         root.addView(ScrollView(this).apply { isFillViewport = true; addView(grid) }, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -529,7 +610,14 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
     }
 
     private fun setup(w: WebView) {
-        w.webChromeClient = object : WebChromeClient() { override fun onProgressChanged(v: WebView, p: Int) { if (v === web) { prog.progress = p; prog.visibility = if (p in 1..99) View.VISIBLE else View.GONE; if (p == 100) srl.isRefreshing = false } } }
+        w.webChromeClient = object : WebChromeClient() {
+            override fun onProgressChanged(v: WebView, p: Int) {
+                if (v === web) { prog.progress = p; prog.visibility = if (p in 1..99) View.VISIBLE else View.GONE; if (p == 100) srl.isRefreshing = false }
+            }
+            override fun onReceivedIcon(view: WebView, icon: Bitmap?) {
+                if (icon != null && !icon.isRecycled) tabIcons[view] = icon
+            }
+        }
         w.setOnLongClickListener {
             val r = w.hitTestResult; val u = r.extra
             if (u == null || !u.startsWith("http") || r.type == WebView.HitTestResult.UNKNOWN_TYPE || r.type == WebView.HitTestResult.EDIT_TEXT_TYPE) false
@@ -1062,7 +1150,14 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
         }.show()
     }
 
-    override fun onPause() { super.onPause(); Engine.save(this) }
+    override fun onPause() { saveTabSession(); super.onPause(); Engine.save(this) }
+    override fun onStop() { saveTabSession(); super.onStop() }
+    override fun onDestroy() {
+        saveTabSession()
+        tabThumbs.values.forEach { if (!it.isRecycled) it.recycle() }
+        tabThumbs.clear()
+        super.onDestroy()
+    }
 
     private fun sheet(title: String, rows: List<Pair<String, () -> Unit>>) {
         val dlg = android.app.Dialog(this)
