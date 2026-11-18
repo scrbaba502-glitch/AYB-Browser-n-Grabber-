@@ -663,7 +663,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
 
     private fun aboutDialog() {
         val body = TextView(this).apply {
-            text = "A² presents\\nAYB+ SUPREME\\n\\nA browser built for control, privacy and powerful media discovery. Browse, organize tabs, detect accessible media and manage downloads in one place.\\n\\nNo DRM bypass. No pretending encrypted or restricted media is downloadable."
+            text = "A² presents\nAYB+ SUPREME\n\nA browser built for control, privacy and powerful media discovery. Browse, organize tabs, detect accessible media and manage downloads in one place.\\n\\nNo DRM bypass. No pretending encrypted or restricted media is downloadable."
             textSize = 15f; setTextColor(inkC); setLineSpacing(dp(5).toFloat(), 1f); setPadding(dp(8), dp(8), dp(8), dp(8))
         }
         AlertDialog.Builder(this).setTitle("About AYB+ SUPREME").setView(body).setPositiveButton("Close", null).show()
