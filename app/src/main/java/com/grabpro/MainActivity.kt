@@ -252,7 +252,7 @@ class MainActivity : Activity() {
         if (all.isEmpty()) {
             AlertDialog.Builder(this)
                 .setTitle("No downloadable media yet")
-                .setMessage("AYB+ is watching this page for media. Try playing the video, scrolling to load more content, or scan again.")
+                .setMessage("AYB+ SUPREME is watching this page for media. Try playing the video, scrolling to load more content, or scan again.")
                 .setPositiveButton("Scan again") { _, _ ->
                     web.evaluateJavascript(SCRAPE, null)
                     ui.postDelayed({ grabDialog(filter) }, 900)
@@ -395,7 +395,7 @@ class MainActivity : Activity() {
         val names = listOf("Violet", "Blue", "Teal", "Green", "Orange", "Pink")
         sheet("Accent colour", names.mapIndexed { i, n -> ("\u25CF  " + n) to {
             getSharedPreferences("gp", 0).edit().putInt("accent", i).apply()
-            Toast.makeText(this, "Restart AYB+ to apply $n", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Restart AYB+ SUPREME to apply $n", Toast.LENGTH_LONG).show()
         } })
     }
 
@@ -523,7 +523,7 @@ svg{margin-top:7vh;filter:drop-shadow(0 8px 20px #7c4dff66)}h1{margin:6px 0 2px;
 .g{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 6px;max-width:520px;margin:34px auto;padding:0 12px}
 a{text-decoration:none;color:inherit;font-size:11.5px}
 .t i{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 7px;border-radius:18px;background:#fff;box-shadow:0 4px 14px #7c4dff22;font:700 22px sans-serif;font-style:normal;color:#7c4dff}
-</style></head><body><svg width=76 height=76 viewBox='0 0 108 108'><defs><linearGradient id=g x1=0 y1=0 x2=1 y2=1><stop offset=0 stop-color='#5b2ee6'/><stop offset=.5 stop-color='#7c4dff'/><stop offset=1 stop-color='#00b0ff'/></linearGradient></defs><rect width=108 height=108 rx=26 fill='url(#g)'/><g fill=none stroke=#fff stroke-width=7 stroke-linecap=round stroke-linejoin=round><path d='M35,84 L54,30 L73,84'/><path d='M54,48 L54,66 M49.5,61.5 L54,66 L58.5,61.5' stroke-width=4.5 /><path d='M77,27 L77,39 M71,33 L83,33' stroke=#b3ecff stroke-width=4 /></g></svg><h1>AYB+</h1><div class=sub>Browser + Grabber</div><form action='$act'><input class=s name=${eng().param} placeholder='Search ${eng().name} or type a URL' autocomplete=off></form><div class=g>$tiles</div></body></html>"""
+</style></head><body><svg width=76 height=76 viewBox='0 0 108 108'><defs><linearGradient id=g x1=0 y1=0 x2=1 y2=1><stop offset=0 stop-color='#5b2ee6'/><stop offset=.5 stop-color='#7c4dff'/><stop offset=1 stop-color='#00b0ff'/></linearGradient></defs><rect width=108 height=108 rx=26 fill='url(#g)'/><g fill=none stroke=#fff stroke-width=7 stroke-linecap=round stroke-linejoin=round><path d='M35,84 L54,30 L73,84'/><path d='M54,48 L54,66 M49.5,61.5 L54,66 L58.5,61.5' stroke-width=4.5 /><path d='M77,27 L77,39 M71,33 L83,33' stroke=#b3ecff stroke-width=4 /></g></svg><h1>AYB+ SUPREME</h1><div class=sub>BROWSER · GRABBER</div><form action='$act'><input class=s name=${eng().param} placeholder='Search ${eng().name} or type a URL' autocomplete=off></form><div class=g>$tiles</div></body></html>"""
         w.loadDataWithBaseURL("https://start.grabpro/", html, "text/html", "utf-8", null)
     }
 
@@ -749,8 +749,8 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
                 val x = o.getJSONObject(k); val v = x.getString("v")
                 when (x.getString("t")) { "b" -> e.putBoolean(k, v.toBoolean()); "i" -> e.putInt(k, v.toInt()); "l" -> e.putLong(k, v.toLong()); else -> e.putString(k, v) }
             }
-            e.apply(); Toast.makeText(this, "Restored. Restart AYB+ to apply everything.", Toast.LENGTH_LONG).show()
-        } catch (ex: Exception) { Toast.makeText(this, "That isn't a valid AYB+ backup", Toast.LENGTH_LONG).show() }
+            e.apply(); Toast.makeText(this, "Restored. Restart AYB+ SUPREME to apply everything.", Toast.LENGTH_LONG).show()
+        } catch (ex: Exception) { Toast.makeText(this, "That isn't a valid AYB+ SUPREME backup", Toast.LENGTH_LONG).show() }
     }
 
     // home-screen widget actions + links/shares sent to the already-open app
