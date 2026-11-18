@@ -1032,6 +1032,21 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
         dlg.show()
     }
 
+    // Avoid duplicate active jobs while allowing different qualities and later retries.
+    private fun enqueueMedia(d: Item) {
+        val existing = downloads.firstOrNull {
+            it.url == d.url && it.ytmode == d.ytmode &&
+            it.status in setOf("Queued", "Downloading", "Scheduled")
+        }
+        if (existing != null) {
+            Toast.makeText(this, "Already queued or downloading", Toast.LENGTH_SHORT).show()
+            return
+        }
+        downloads.add(d)
+        Engine.start(this, d)
+        showList(true)
+    }
+
     // the built-in video/audio downloader (YouTube and 1000+ sites) - no separate tool, it lives behind the floating button
     private fun ytDialog(u: String, title: String) {
         val modes = listOf("best", "1080", "720", "480", "mp3", "L1080", "Lmp3")
@@ -1039,7 +1054,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
             "\uD83D\uDCDA  Whole playlist \u00B7 1080p", "\uD83C\uDFA7  Whole playlist \u00B7 MP3")
         val rows = mutableListOf<Pair<String, () -> Unit>>()
         names.forEachIndexed { i, n ->
-            rows.add(n to { val d = Item(u, title, u, "", CookieManager.getInstance().getCookie(u) ?: "", modes[i]); downloads.add(d); Engine.start(this, d); showList(true) })
+            rows.add(n to { val d = Item(u, title, u, "", CookieManager.getInstance().getCookie(u) ?: "", modes[i]); enqueueMedia(d) })
         }
         rows.add("\uD83D\uDCCB  Paste many links \u00B7 1080p" to { batch("1080") })
         rows.add("\uD83D\uDCCB  Paste many links \u00B7 MP3" to { batch("mp3") })
@@ -1061,7 +1076,7 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
         AlertDialog.Builder(this).setTitle("Paste links").setView(et).setPositiveButton("Download") { _, _ ->
             Regex("https?://\\S+").findAll(et.text).forEach { m ->
                 val d = Item(m.value, m.value, m.value, "", CookieManager.getInstance().getCookie(m.value) ?: "", mode)
-                downloads.add(d); Engine.start(this, d)
+                enqueueMedia(d)
             }
             showList(true)
         }.show()
