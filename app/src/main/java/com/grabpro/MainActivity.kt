@@ -60,6 +60,7 @@ class MainActivity : Activity() {
         "Images" to setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "avif", "heic", "tiff"),
         "Documents" to setOf("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "epub", "txt", "rtf", "odt", "ods", "odp", "csv"),
         "Archives/Apps" to setOf("zip", "rar", "7z", "gz", "tar", "iso", "apk", "exe", "dmg"))
+    private val exts = cats.values.flatten().toSet()
     private val adHosts = listOf("doubleclick.net", "googlesyndication.com", "adservice.google", "popads.net", "propellerads", "adsterra", "exoclick", "taboola.com", "outbrain.com")
 
     private fun mk(u: String, name: String, w: WebView = web) = Item(u, name, w.url ?: "", w.settings.userAgentString, CookieManager.getInstance().getCookie(u) ?: "")
