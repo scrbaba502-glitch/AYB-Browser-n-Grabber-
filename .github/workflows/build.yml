@@ -11,4 +11,4 @@ jobs:
         with: { gradle-version: 8.7 }
       - run: gradle assembleDebug --stacktrace
       - uses: actions/upload-artifact@v4
-        with: { name: AYB-Plus-Supreme-3.1.0-debug-apk, path: app/build/outputs/apk/debug/*.apk }
+        with: { name: AYB-Plus-Supreme-3.2.0-debug-apk, path: app/build/outputs/apk/debug/*.apk }

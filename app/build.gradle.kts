@@ -3,7 +3,7 @@ android {
     namespace = "com.grabpro"
     compileSdk = 34
     defaultConfig {
-        applicationId = "com.a2.ayb"; minSdk = 29; targetSdk = 34; versionCode = 4; versionName = "3.1.0"
+        applicationId = "com.a2.ayb"; minSdk = 29; targetSdk = 34; versionCode = 5; versionName = "3.2.0"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
