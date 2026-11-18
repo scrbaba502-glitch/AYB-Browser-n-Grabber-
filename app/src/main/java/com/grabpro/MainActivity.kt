@@ -325,7 +325,7 @@ class MainActivity : Activity() {
         }.start()
     }
 
-    // BRANDING RULE: "A² presents" is permitted ONLY inside this launch intro. Never show it elsewhere in the app UI.
+    // BRANDING RULE: "A² presents" may appear ONLY in the launch intro and About section.
     // "A² presents AYB+ : Browser + Grabber" launch intro (tap to skip)
     private fun showIntro() {
         val splash = LinearLayout(this).apply {
@@ -335,11 +335,11 @@ class MainActivity : Activity() {
         val presents = TextView(this).apply { text = "A\u00B2 presents"; textSize = 14f; letterSpacing = 0.3f; setTextColor(0xCCFFFFFF.toInt()) }
         val logo = ImageView(this).apply { setImageResource(R.drawable.ic_logo); scaleX = 0.7f; scaleY = 0.7f }
         val title = TextView(this).apply {
-            text = "AYB+"; textSize = 46f; setTypeface(null, Typeface.BOLD); letterSpacing = 0.04f
-            paint.shader = android.graphics.LinearGradient(0f, 0f, paint.measureText("AYB+"), 0f,
+            text = "AYB+ SUPREME"; textSize = 38f; setTypeface(null, Typeface.BOLD); letterSpacing = 0.04f
+            paint.shader = android.graphics.LinearGradient(0f, 0f, paint.measureText("AYB+ SUPREME"), 0f,
                 intArrayOf(0xFFB39DFF.toInt(), 0xFF40C4FF.toInt()), null, android.graphics.Shader.TileMode.CLAMP)
         }
-        val sub = TextView(this).apply { text = "Browser + Grabber"; textSize = 15f; letterSpacing = 0.15f; setTextColor(0xB3FFFFFF.toInt()) }
+        val sub = TextView(this).apply { text = "BROWSER  ·  GRABBER"; textSize = 13f; letterSpacing = 0.15f; setTextColor(0xB3FFFFFF.toInt()) }
         splash.addView(presents, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(28) })
         splash.addView(logo, LinearLayout.LayoutParams(dp(112), dp(112)).apply { bottomMargin = dp(20) })
         splash.addView(title)
@@ -411,16 +411,60 @@ class MainActivity : Activity() {
     private val groupOf = HashMap<WebView, Int>()
     private val dots = listOf("\u26AA", "\uD83D\uDD34", "\uD83D\uDFE0", "\uD83D\uDFE2", "\uD83D\uDD35", "\uD83D\uDFE3")
 
+    // Chrome-style mobile tab overview: two-column cards, one-tap switching, per-card close.
     private fun tabsDialog() {
-        val rows = mutableListOf<Pair<String, () -> Unit>>()
-        tabs.forEachIndexed { k, t ->
-            rows.add(((if (priv.contains(t)) "\uD83D\uDD76 " else dots[groupOf[t] ?: 0] + " ") + (t.title ?: "New tab").take(38)) to { select(k) })
+        val dlg = android.app.Dialog(this, android.R.style.Theme_DeviceDefault_NoActionBar)
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(12), dp(16), dp(16)); setBackgroundColor(bgC) }
+        val header = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        header.addView(TextView(this).apply { text = "Tabs  ·  ${tabs.size}"; textSize = 21f; setTypeface(null, Typeface.BOLD); setTextColor(inkC) }, LinearLayout.LayoutParams(0, -2, 1f))
+        header.addView(TextView(this).apply { text = "Done"; textSize = 15f; setTextColor(accC); setPadding(dp(12), dp(10), dp(4), dp(10)); setOnClickListener { dlg.dismiss() } })
+        root.addView(View(this).apply { background = rr(0xFF80868B.toInt(), 3) }, LinearLayout.LayoutParams(dp(42), dp(4)).apply { gravity = Gravity.CENTER_HORIZONTAL; bottomMargin = dp(14) })
+        root.addView(header)
+        val grid = android.widget.GridLayout(this).apply { columnCount = 2; useDefaultMargins = false }
+        fun rebuild() {
+            grid.removeAllViews()
+            val cardW = ((resources.displayMetrics.widthPixels - dp(64)) / 2).coerceAtLeast(dp(130))
+            tabs.forEachIndexed { index, tab ->
+                val card = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(10), dp(10), dp(10))
+                    background = GradientDrawable().apply { setColor(pillC); cornerRadius = dp(16).toFloat(); setStroke(dp(if (tab === web) 2 else 1), if (tab === web) accC else 0x33808090) }
+                    isClickable = true; isFocusable = true; setOnClickListener { dlg.dismiss(); select(index) }
+                }
+                val topLine = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+                topLine.addView(TextView(this).apply { text = if (priv.contains(tab)) "◉" else dots[groupOf[tab] ?: 0]; textSize = 16f; setTextColor(accC) })
+                topLine.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+                topLine.addView(TextView(this).apply {
+                    text = "×"; textSize = 22f; setTextColor(inkC); gravity = Gravity.CENTER; setPadding(dp(10), 0, dp(2), 0)
+                    setOnClickListener {
+                        if (tabs.size > 1) {
+                            val wasCurrent = tab === web; val at = tabs.indexOf(tab)
+                            frame.removeView(tab); foundMap.remove(tab); varMap.remove(tab); priv.remove(tab); groupOf.remove(tab)
+                            tab.stopLoading(); tab.destroy(); tabs.remove(tab)
+                            if (priv.isEmpty()) try { androidx.webkit.ProfileStore.getInstance().deleteProfile("private") } catch (_: Exception) {}
+                            if (wasCurrent) select(minOf(at, tabs.size - 1))
+                            tabsBtn.text = tabs.size.toString(); rebuild()
+                        } else { tab.loadUrl("about:blank"); tab.clearHistory(); dlg.dismiss() }
+                    }
+                })
+                card.addView(topLine)
+                card.addView(TextView(this).apply {
+                    text = tab.title?.takeIf { it.isNotBlank() } ?: "New tab"; textSize = 15f
+                    setTypeface(null, Typeface.BOLD); setTextColor(inkC); maxLines = 2; ellipsize = TextUtils.TruncateAt.END
+                    setPadding(0, dp(7), 0, dp(5))
+                })
+                card.addView(TextView(this).apply {
+                    text = try { Uri.parse(tab.url ?: "").host ?: "New tab" } catch (_: Exception) { "New tab" }
+                    textSize = 11f; setTextColor(0xFF9298AC.toInt()); maxLines = 1; ellipsize = TextUtils.TruncateAt.MIDDLE
+                })
+                grid.addView(card, android.widget.GridLayout.LayoutParams().apply { width = cardW; height = dp(126); setMargins(dp(4), dp(5), dp(4), dp(5)) })
+            }
         }
-        rows.add("\uD83C\uDFA8  Set group for this tab" to { groupSheet() })
-        rows.add("\uD83E\uDDF9  Close all tabs in this tab's group" to { closeGroup() })
-        rows.add("\u2795  New tab" to { newTab(null) })
-        rows.add("\u2716  Close this tab" to { closeTab() })
-        sheet("Tabs (${tabs.size})", rows)
+        root.addView(ScrollView(this).apply { isFillViewport = true; addView(grid) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        val actions = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        actions.addView(Button(this).apply { text = "+ New tab"; isAllCaps = false; setOnClickListener { dlg.dismiss(); newTab(null) } }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(8) })
+        actions.addView(Button(this).apply { text = "Private"; isAllCaps = false; setOnClickListener { dlg.dismiss(); auth { newTab(null, true) } } }, LinearLayout.LayoutParams(0, dp(48), 1f))
+        root.addView(actions); rebuild()
+        dlg.setContentView(root); dlg.show(); dlg.window?.setLayout(-1, -1)
     }
 
     private fun groupSheet() {
@@ -452,7 +496,7 @@ class MainActivity : Activity() {
     private fun auth(ok: () -> Unit) {
         val kg = getSystemService(android.app.KeyguardManager::class.java)
         if (!Engine.pref(this, "lock") || !kg.isDeviceSecure || System.currentTimeMillis() < unlockedUntil) { ok(); return }
-        val b = android.hardware.biometrics.BiometricPrompt.Builder(this).setTitle("AYB+").setSubtitle("Unlock to continue")
+        val b = android.hardware.biometrics.BiometricPrompt.Builder(this).setTitle("AYB+ SUPREME").setSubtitle("Unlock to continue")
         if (android.os.Build.VERSION.SDK_INT >= 30) b.setAllowedAuthenticators(android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_WEAK or android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL)
         else b.setDeviceCredentialAllowed(true)
         b.build().authenticate(android.os.CancellationSignal(), mainExecutor, object : android.hardware.biometrics.BiometricPrompt.AuthenticationCallback() {
@@ -607,12 +651,21 @@ a{text-decoration:none;color:inherit;font-size:11.5px}
             "\uD83D\uDD17  Unshorten a link" to { unshortenDialog(lastClip) },
             "\u26A1  Speed test" to { speedTest() },
             "\uD83D\uDDC2  My files (file manager)" to { auth { filesScreen() } },
+            "\\u2139  About AYB+ SUPREME" to { aboutDialog() },
             "\uD83C\uDFA8  Accent colour" to { accentSheet() },
             "\uD83D\uDCBE  Backup settings, bookmarks, history" to { backup() },
             "\u267B  Restore from backup" to { restore() },
             "\uD83C\uDFE0  Home" to { loadHome(web) },
             "\u2716  Close this tab" to { closeTab() })
-        sheet("AYB+", rows)
+        sheet("AYB+ SUPREME", rows)
+    }
+
+    private fun aboutDialog() {
+        val body = TextView(this).apply {
+            text = "A² presents\\nAYB+ SUPREME\\n\\nA browser built for control, privacy and powerful media discovery. Browse, organize tabs, detect accessible media and manage downloads in one place.\\n\\nNo DRM bypass. No pretending encrypted or restricted media is downloadable."
+            textSize = 15f; setTextColor(inkC); setLineSpacing(dp(5).toFloat(), 1f); setPadding(dp(8), dp(8), dp(8), dp(8))
+        }
+        AlertDialog.Builder(this).setTitle("About AYB+ SUPREME").setView(body).setPositiveButton("Close", null).show()
     }
 
     // IDM-style site grabber: reads this page and up to 40 same-site pages it links to, and collects every downloadable file
