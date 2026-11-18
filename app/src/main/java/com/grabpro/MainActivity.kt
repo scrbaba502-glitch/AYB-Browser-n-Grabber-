@@ -343,7 +343,7 @@ class MainActivity : Activity() {
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(0xFF0A0C1C.toInt(), 0xFF1D1245.toInt()))
         }
         val presents = TextView(this).apply { text = "A\u00B2 presents"; textSize = 14f; letterSpacing = 0.3f; setTextColor(0xCCFFFFFF.toInt()) }
-        val logo = ImageView(this).apply { setImageResource(R.drawable.ic_logo); scaleX = 0.7f; scaleY = 0.7f }
+        val logo = ImageView(this).apply { setImageResource(R.drawable.ic_launcher_lion); scaleX = 0.7f; scaleY = 0.7f }
         val title = TextView(this).apply {
             text = "AYB+ SUPREME"; textSize = 38f; setTypeface(null, Typeface.BOLD); letterSpacing = 0.04f
             paint.shader = android.graphics.LinearGradient(0f, 0f, paint.measureText("AYB+ SUPREME"), 0f,
