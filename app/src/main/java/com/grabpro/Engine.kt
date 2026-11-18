@@ -49,7 +49,7 @@ object Engine {
     fun save(ctx: Context) {
         val a = org.json.JSONArray()
         for (d in all.takeLast(200)) a.put(org.json.JSONObject().put("u", d.url).put("n", d.name).put("r", d.referer).put("a", d.ua)
-            .put("c", d.cookie).put("y", d.ytmode).put("s", d.status).put("m", d.uri?.toString() ?: "").put("d", d.done.get()).put("t", d.startAt))
+            .put("y", d.ytmode).put("s", d.status).put("m", d.uri?.toString() ?: "").put("d", d.done.get()).put("t", d.startAt))
         ctx.getSharedPreferences("gp", 0).edit().putString("hist", a.toString()).apply()
     }
 
@@ -59,7 +59,7 @@ object Engine {
             val a = org.json.JSONArray(ctx.getSharedPreferences("gp", 0).getString("hist", "[]"))
             for (i in 0 until a.length()) {
                 val o = a.getJSONObject(i)
-                val d = Item(o.getString("u"), o.getString("n"), o.getString("r"), o.getString("a"), o.getString("c"), o.getString("y"))
+                val d = Item(o.getString("u"), o.getString("n"), o.getString("r"), o.getString("a"), o.optString("c", ""), o.getString("y"))
                 val s = o.getString("s")
                 d.status = if (s == "Done" || s == "Scheduled") s else "Paused"
                 if (o.getString("m").isNotEmpty()) d.uri = Uri.parse(o.getString("m"))
@@ -255,7 +255,12 @@ object Engine {
             }
             url = URL(URL(url), pick).toString(); text = fetch(d, url)
         }
-        if (text.contains("METHOD=AES-128")) throw IOException("Encrypted HLS not supported")
+        val keyTags = text.lines().filter { it.startsWith("#EXT-X-KEY:") || it.startsWith("#EXT-X-SESSION-KEY:") }
+        val encrypted = keyTags.any { tag -> Regex("METHOD=(?!NONE(?:,|$))", RegexOption.IGNORE_CASE).containsMatchIn(tag) }
+        if (encrypted || Regex("(?i)SAMPLE-AES|KEYFORMAT=").containsMatchIn(text))
+            throw IOException("Encrypted HLS is not supported")
+        if (!text.contains("#EXT-X-ENDLIST"))
+            throw IOException("Live HLS streams are not supported yet; try a completed recording")
         val segs = text.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }.map { URL(URL(url), it).toString() }
         d.segs = segs.size
         var off = d.done.get()
