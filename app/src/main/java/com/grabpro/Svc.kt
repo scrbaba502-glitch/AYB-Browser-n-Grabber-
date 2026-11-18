@@ -13,7 +13,7 @@ class Svc : Service() {
 
     private fun note(text: String, pct: Int): Notification {
         val pi = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
-        return Notification.Builder(this, "dl").setSmallIcon(android.R.drawable.stat_sys_download).setContentTitle("AYB+")
+        return Notification.Builder(this, "dl").setSmallIcon(android.R.drawable.stat_sys_download).setContentTitle("AYB+ SUPREME")
             .setContentText(text).setProgress(100, maxOf(pct, 0), pct < 0).setOngoing(true).setContentIntent(pi).build()
     }
 
