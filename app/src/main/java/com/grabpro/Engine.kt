@@ -21,7 +21,7 @@ import java.nio.channels.FileChannel
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 
-class Item(val url: String, val name: String, val referer: String, val ua: String, val cookie: String, val ytmode: String = "") {
+class Item(val url: String, val name: String, val referer: String, val ua: String, val cookie: String, @Volatile var ytmode: String = "") {
     @Volatile var status = "Queued"
     @Volatile var paused = false
     @Volatile var total = 0L
