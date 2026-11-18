@@ -107,7 +107,11 @@ object Engine {
         d.paused = false; d.status = "Downloading"
         ctx.startForegroundService(Intent(ctx, Svc::class.java))
         jobs.execute {
-            if (d.ytmode.isNotEmpty()) { runYt(ctx, d); return@execute }
+            val detected = MediaDetector.classify(d.url)
+            if (d.ytmode.isNotEmpty() || detected?.extension == "mpd") {
+                if (d.ytmode.isEmpty()) d.ytmode = "best"
+                runYt(ctx, d); return@execute
+            }
             var pfd: ParcelFileDescriptor? = null
             try {
                 if (d.uri == null) d.uri = create(ctx, d.name)
@@ -134,6 +138,11 @@ object Engine {
         val dir = File(ctx.cacheDir, "yt/" + d.hashCode()).apply { mkdirs() }
         try {
             while (!App.ready) { App.initError?.let { throw IOException("yt-dlp failed to start: $it") }; Thread.sleep(300) }
+            if (MediaDetector.classify(d.url)?.extension == "mpd") {
+                val manifest = conn(d, d.url).inputStream.bufferedReader().use { it.readText() }
+                val protected = Regex("(?is)<ContentProtection\\b|\\bcenc:pssh\\b|widevine|playready").containsMatchIn(manifest)
+                if (protected) throw IOException("DRM-protected DASH is not supported")
+            }
             val pl = d.ytmode.startsWith("L"); val m = d.ytmode.removePrefix("L")
             val r = YoutubeDLRequest(d.url)
             r.addOption("-o", dir.absolutePath + (if (pl) "/%(playlist_index)03d - %(title).90B.%(ext)s" else "/%(title).100B.%(ext)s"))
